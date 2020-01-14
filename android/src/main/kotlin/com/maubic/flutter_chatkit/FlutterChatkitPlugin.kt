@@ -39,6 +39,9 @@ class FlutterChatkitPlugin: MethodCallHandler {
       }
       true
     }
+    fun resSuccess(obj: Any) { handler.obtainMessage(SUCCESS, obj).sendToTarget() }
+    fun resFailure(err: String?) { handler.obtainMessage(FAILURE, err).sendToTarget() }
+
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "connect") {
@@ -59,10 +62,10 @@ class FlutterChatkitPlugin: MethodCallHandler {
         when (res) {
           is PusherResult.Success -> {
             currentUser = res.value
-            handler.obtainMessage(SUCCESS, res.value.id).sendToTarget()
+            resSuccess(res.value.id)
           }
           is PusherResult.Failure -> {
-            handler.obtainMessage(FAILURE, res.error.message).sendToTarget()
+            resFailure(res.error.message)
           }
         }
       }
