@@ -12,7 +12,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  String _userId = 'Unknown';
 
   @override
   void initState() {
@@ -24,6 +24,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> initPlatformState() async {
     String platformVersion;
     // Platform messages may fail, so we use a try/catch PlatformException.
+    /*
     try {
       platformVersion = await FlutterChatkit.platformVersion;
     } on PlatformException {
@@ -38,6 +39,20 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _platformVersion = platformVersion;
     });
+    */
+
+    await Future.delayed(Duration(seconds: 4));
+
+    String userId = await FlutterChatkit.connect(
+      instanceLocator: 'v1:us1:b7eea6ee-98d7-4527-bed0-e13d7515bafe',
+      userId: 'ce2f362d-1f08-4201-9d72-3d736c90660f',
+      tokenProviderURL:
+          'https://us1.pusherplatform.io/services/chatkit_token_provider/v1/b7eea6ee-98d7-4527-bed0-e13d7515bafe/token',
+    );
+
+    setState(() {
+      _userId = userId;
+    });
   }
 
   @override
@@ -48,7 +63,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Text('User ID: $_userId'),
         ),
       ),
     );
