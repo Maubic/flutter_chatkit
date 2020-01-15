@@ -47,14 +47,16 @@ class FlutterChatkitPlugin: MethodCallHandler {
     } else if (call.method == "connect") {
       val instanceLocator: String = call.argument<String>("instanceLocator")!!
       val userId: String = call.argument<String>("userId")!!
+      val accessToken: String? = call.argument<String?>("accessToken")
       val tokenProviderURL: String = call.argument<String>("tokenProviderURL")!!
       val chatManager: ChatManager = ChatManager(
         instanceLocator = instanceLocator,
         userId = userId,
         dependencies = AndroidChatkitDependencies(
-          tokenProvider = ChatkitTokenProvider(
+          tokenProvider = FlutterChatkitTokenProvider(
             endpoint = tokenProviderURL,
-            userId = userId
+            userId = userId,
+            authHeader = accessToken ?: ""
           )
         )
       )
