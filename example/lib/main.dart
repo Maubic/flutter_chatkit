@@ -13,6 +13,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _userId = 'Unknown';
+  String _roomId = 'Unknown';
+  String _message = '';
 
   @override
   void initState() {
@@ -42,16 +44,24 @@ class _MyAppState extends State<MyApp> {
     */
 
     await Future.delayed(Duration(seconds: 4));
+    final FlutterChatkit chatkit = FlutterChatkit.instance;
 
-    String userId = await FlutterChatkit.connect(
+    await chatkit.connect(
       instanceLocator: 'v1:us1:b7eea6ee-98d7-4527-bed0-e13d7515bafe',
       userId: 'ce2f362d-1f08-4201-9d72-3d736c90660f',
       tokenProviderURL:
           'https://us1.pusherplatform.io/services/chatkit_token_provider/v1/b7eea6ee-98d7-4527-bed0-e13d7515bafe/token',
     );
 
+    Stream<Map> globalEvents = chatkit.globalEvents();
+    final Map data = await globalEvents
+        .where((data) => data['event'] == 'CurrentUserReceived')
+        .first;
+    final String roomId = data['rooms'][0]['id'];
+
     setState(() {
-      _userId = userId;
+      _userId = data['id'];
+      _roomId = roomId;
     });
   }
 
@@ -63,7 +73,14 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('User ID: $_userId'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('User ID: $_userId'),
+              Text('Room ID: $_roomId'),
+              Text('$_message'),
+            ],
+          ),
         ),
       ),
     );

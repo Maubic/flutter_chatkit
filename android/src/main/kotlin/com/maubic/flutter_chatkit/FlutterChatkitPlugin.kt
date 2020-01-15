@@ -4,44 +4,78 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.EventChannel.StreamHandler
+import io.flutter.plugin.common.EventChannel.EventSink
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import android.os.Handler
+import android.os.Looper
 import com.pusher.chatkit.ChatManager
+import com.pusher.chatkit.ChatEvent
 import com.pusher.chatkit.AndroidChatkitDependencies
 import com.pusher.chatkit.ChatkitTokenProvider
 import com.pusher.chatkit.CurrentUser
+import com.pusher.chatkit.SynchronousCurrentUser
 import com.pusher.util.Result as PusherResult
 
-class FlutterChatkitPlugin: MethodCallHandler {
+private const val SUCCESS_RESULT: Int = 0;
+private const val FAILURE_RESULT: Int = 1;
+private const val SUCCESS_EVENT: Int = 0;
+private const val FAILURE_EVENT: Int = 1;
+
+class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, StreamHandler {
   private var currentUser: CurrentUser? = null;
-  private val SUCCESS: Int = 0;
-  private val FAILURE: Int = 0;
+  private var eventSink: EventSink? = null;
 
   companion object {
     @JvmStatic
     fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), "flutter_chatkit")
-      channel.setMethodCallHandler(FlutterChatkitPlugin())
+      val plugin: FlutterChatkitPlugin = FlutterChatkitPlugin(Looper.myLooper())
+      val messenger: BinaryMessenger = registrar.messenger()
+
+      val methodChannel: MethodChannel = MethodChannel(messenger, "flutter_chatkit")
+      methodChannel.setMethodCallHandler(plugin)
+
+      val eventChannel: EventChannel = EventChannel(messenger, "flutter_chatkit_events")
+      eventChannel.setStreamHandler(plugin)
     }
   }
 
-  override fun onMethodCall(call: MethodCall, result: Result) {
-    val handler: Handler = Handler { msg ->
-      when (msg.what) {
-        SUCCESS -> {
-          val value = msg.obj
-          result.success(value)
-        }
-        FAILURE -> {
-          val err: String? = msg.obj as? String
-          result.error("ERR", err, null)
-        }
-      }
+  private fun successResult(result: Result, obj: Any) {
+    val handler: Handler = Handler(looper) { msg ->
+      result.success(obj)
       true
     }
-    fun resSuccess(obj: Any) { handler.obtainMessage(SUCCESS, obj).sendToTarget() }
-    fun resFailure(err: String?) { handler.obtainMessage(FAILURE, err).sendToTarget() }
+    handler.obtainMessage().sendToTarget()
+  }
 
+  private fun failureResult(result: Result, err: String?) {
+    val handler: Handler = Handler(looper) { msg ->
+      result.error("ERR_RESULT", err, null)
+      true
+    }
+    handler.obtainMessage().sendToTarget()
+  }
+
+  private fun successEvent(obj: Any) {
+    println("Success event")
+    val handler: Handler = Handler(looper) { msg ->
+      eventSink?.success(obj)
+      true
+    }
+    handler.obtainMessage().sendToTarget()
+  }
+
+  private fun failureEvent(err: String?) {
+    val handler: Handler = Handler(looper) { msg ->
+      eventSink?.error("ERR_RESULT", err, null)
+      true
+    }
+    handler.obtainMessage().sendToTarget()
+  }
+
+  override fun onMethodCall(call: MethodCall, result: Result) {
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "connect") {
@@ -60,19 +94,49 @@ class FlutterChatkitPlugin: MethodCallHandler {
           )
         )
       )
-      chatManager.connect { res ->
-        when (res) {
-          is PusherResult.Success -> {
-            currentUser = res.value
-            resSuccess(res.value.id)
+      chatManager.connect(
+        consumer = { event ->
+          when (event) {
+            is ChatEvent.CurrentUserReceived -> {
+              val currentUser: SynchronousCurrentUser = event.currentUser
+              successEvent(hashMapOf(
+                "type" to "global",
+                "event" to "CurrentUserReceived",
+                "id" to currentUser.id,
+                "name" to currentUser.name,
+                "rooms" to currentUser.rooms.map { room -> hashMapOf(
+                  "id" to room.id,
+                  "name" to room.name,
+                  "unreadCount" to room.unreadCount
+                )}
+              ))
+            }
           }
-          is PusherResult.Failure -> {
-            resFailure(res.error.message)
+        },
+        callback = { res ->
+          when (res) {
+            is PusherResult.Success -> {
+              currentUser = res.value
+              successResult(result, res.value.id)
+            }
+            is PusherResult.Failure -> {
+              failureResult(result, res.error.message)
+            }
           }
         }
-      }
+      )
     } else {
       result.notImplemented()
     }
+  }
+
+  override fun onListen(arguments: Any?, events: EventSink) {
+    println("Listened")
+    eventSink = events
+  }
+
+  override fun onCancel(arguments: Any?) {
+    println("Cancelled")
+    eventSink = null
   }
 }
