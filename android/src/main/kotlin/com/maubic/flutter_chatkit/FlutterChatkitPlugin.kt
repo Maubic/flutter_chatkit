@@ -111,7 +111,8 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
                 "rooms" to currentUser.rooms.map { room -> hashMapOf(
                   "id" to room.id,
                   "name" to room.name,
-                  "unreadCount" to room.unreadCount
+                  "unreadCount" to room.unreadCount,
+                  "customData" to room.customData
                 )}
               ))
             }
