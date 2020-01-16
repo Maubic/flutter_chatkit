@@ -53,23 +53,24 @@ class _MyAppState extends State<MyApp> {
           'https://us1.pusherplatform.io/services/chatkit_token_provider/v1/b7eea6ee-98d7-4527-bed0-e13d7515bafe/token',
     );
 
-    Stream<Map> globalEvents = chatkit.globalEvents();
-    final Map data = await globalEvents
-        .where((data) => data['event'] == 'CurrentUserReceived')
+    Stream<ChatkitGlobalEvent> globalEvents = chatkit.globalEvents();
+    final CurrentUserReceivedGlobalEvent event = await globalEvents
+        .where((event) => event is CurrentUserReceivedGlobalEvent)
+        .cast<CurrentUserReceivedGlobalEvent>()
         .first;
-    final String roomId = data['rooms'][0]['id'];
+    final String roomId = event.rooms[0].id;
 
     setState(() {
-      _userId = data['id'];
+      _userId = event.id;
       _roomId = roomId;
     });
 
-    chatkit.roomEvents(roomId).forEach((data) {
-      if (data['event'] == 'MultipartMessage') {
+    chatkit.roomEvents(roomId).forEach((event) {
+      if (event is MultipartMessageRoomEvent) {
         setState(() {
-          final Map part = data['parts'][0];
-          if (part['type'] == 'inline') {
-            _message = '${part['content']}';
+          final ChatkitMessagePart part = event.parts[0];
+          if (part is InlineMessagePart) {
+            _message = '${part.content}';
           }
         });
       }

@@ -4,6 +4,15 @@ import 'package:meta/meta.dart';
 import 'package:flutter/services.dart';
 import 'package:rxdart/rxdart.dart';
 
+import 'global_events.dart';
+export 'global_events.dart';
+import 'room_events.dart';
+export 'room_events.dart';
+import 'room.dart';
+export 'room.dart';
+import 'message.dart';
+export 'message.dart';
+
 class FlutterChatkit {
   static const MethodChannel _methodChannel =
       const MethodChannel('flutter_chatkit');
@@ -47,12 +56,16 @@ class FlutterChatkit {
     }
   }
 
-  Stream<Map> globalEvents() {
-    return this.stream.where((data) => data['type'] == 'global');
+  Stream<ChatkitGlobalEvent> globalEvents() {
+    return this
+        .stream
+        .where((data) => data['type'] == 'global')
+        .map(ChatkitGlobalEvent.fromData);
   }
 
-  Stream<Map> roomEvents(String roomId) {
-    final StreamController<Map> roomEventsController = BehaviorSubject<Map>(
+  Stream<ChatkitRoomEvent> roomEvents(String roomId) {
+    final StreamController<ChatkitRoomEvent> roomEventsController =
+        BehaviorSubject<ChatkitRoomEvent>(
       onListen: () {
         _methodChannel.invokeMethod('subscribeToRoom', {'roomId': roomId});
       },
@@ -63,6 +76,8 @@ class FlutterChatkit {
     this
         .stream
         .where((data) => data['type'] == 'room' && data['roomId'] == roomId)
+        .map(ChatkitRoomEvent.fromData)
+        .cast<ChatkitRoomEvent>()
         .pipe(roomEventsController);
     return roomEventsController.stream;
   }
