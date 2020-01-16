@@ -21,6 +21,8 @@ class FlutterChatkit {
     _eventChannel.receiveBroadcastStream().cast<Map>().pipe(this.controller);
   }
 
+  Stream<Map> get stream => this.controller.stream;
+
   static Future<String> get platformVersion async {
     final String version =
         await _methodChannel.invokeMethod('getPlatformVersion');
@@ -46,6 +48,22 @@ class FlutterChatkit {
   }
 
   Stream<Map> globalEvents() {
-    return this.controller.stream.where((data) => data['type'] == 'global');
+    return this.stream.where((data) => data['type'] == 'global');
+  }
+
+  Stream<Map> roomEvents(String roomId) {
+    final StreamController<Map> roomEventsController = BehaviorSubject<Map>(
+      onListen: () {
+        _methodChannel.invokeMethod('subscribeToRoom', {'roomId': roomId});
+      },
+      onCancel: () {
+        _methodChannel.invokeMethod('unsubscribeFromRoom', {'roomId': roomId});
+      },
+    );
+    this
+        .stream
+        .where((data) => data['type'] == 'room' && data['roomId'] == roomId)
+        .pipe(roomEventsController);
+    return roomEventsController.stream;
   }
 }

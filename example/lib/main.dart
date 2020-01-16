@@ -63,6 +63,17 @@ class _MyAppState extends State<MyApp> {
       _userId = data['id'];
       _roomId = roomId;
     });
+
+    chatkit.roomEvents(roomId).forEach((data) {
+      if (data['event'] == 'MultipartMessage') {
+        setState(() {
+          final Map part = data['parts'][0];
+          if (part['type'] == 'inline') {
+            _message = '${part['content']}';
+          }
+        });
+      }
+    });
   }
 
   @override

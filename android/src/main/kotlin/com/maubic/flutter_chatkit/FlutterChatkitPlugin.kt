@@ -17,7 +17,11 @@ import com.pusher.chatkit.AndroidChatkitDependencies
 import com.pusher.chatkit.ChatkitTokenProvider
 import com.pusher.chatkit.CurrentUser
 import com.pusher.chatkit.SynchronousCurrentUser
+import com.pusher.chatkit.rooms.RoomEvent
+import com.pusher.chatkit.messages.multipart.Message
+import com.pusher.chatkit.messages.multipart.Payload
 import com.pusher.util.Result as PusherResult
+import elements.Subscription
 
 private const val SUCCESS_RESULT: Int = 0;
 private const val FAILURE_RESULT: Int = 1;
@@ -27,6 +31,7 @@ private const val FAILURE_EVENT: Int = 1;
 class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, StreamHandler {
   private var currentUser: CurrentUser? = null;
   private var eventSink: EventSink? = null;
+  private var roomSubscriptions: MutableMap<String, Subscription> = mutableMapOf()
 
   companion object {
     @JvmStatic
@@ -59,7 +64,6 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
   }
 
   private fun successEvent(obj: Any) {
-    println("Success event")
     val handler: Handler = Handler(looper) { msg ->
       eventSink?.success(obj)
       true
@@ -125,18 +129,56 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
           }
         }
       )
+    } else if (call.method == "subscribeToRoom") {
+      val roomId: String = call.argument<String>("roomId")!!
+      currentUser?.subscribeToRoomMultipart(
+        roomId = roomId,
+        consumer = { event ->
+          when (event) {
+            is RoomEvent.MultipartMessage -> {
+              val message: Message = event.message
+              successEvent(hashMapOf(
+                "type" to "room",
+                "event" to "MultipartMessage",
+                "id" to message.id,
+                "roomId" to roomId,
+                "senderId" to message.sender.id,
+                "senderName" to message.sender.name,
+                "parts" to message.parts.map { part ->
+                  val payload: Payload = part.payload
+                  when (payload) {
+                    is Payload.Inline -> hashMapOf(
+                      "type" to "inline",
+                      "content" to payload.content
+                    )
+                    // TODO
+                    else -> hashMapOf(
+                      "type" to "other"
+                    )
+                  }
+                }
+              ))
+            }
+          }
+        },
+        callback = { subscription ->
+          roomSubscriptions.put(roomId, subscription)
+          successResult(result, roomId)
+        }
+      )
+    } else if (call.method == "unsubscribeFromRoom") {
+      val roomId: String = call.argument<String>("roomId")!!
+      roomSubscriptions.get(roomId)?.unsubscribe()
     } else {
       result.notImplemented()
     }
   }
 
   override fun onListen(arguments: Any?, events: EventSink) {
-    println("Listened")
     eventSink = events
   }
 
   override fun onCancel(arguments: Any?) {
-    println("Cancelled")
     eventSink = null
   }
 }
