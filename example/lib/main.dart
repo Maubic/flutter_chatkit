@@ -68,7 +68,7 @@ class _MyAppState extends State<MyApp> {
     chatkit.roomEvents(roomId).forEach((event) {
       if (event is MultipartMessageRoomEvent) {
         setState(() {
-          final ChatkitMessagePart part = event.parts[0];
+          final ChatkitMessagePart part = event.message.parts[0];
           if (part is InlineMessagePart) {
             _message = '${part.content}';
           }

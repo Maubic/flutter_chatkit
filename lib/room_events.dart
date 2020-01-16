@@ -9,12 +9,8 @@ abstract class ChatkitRoomEvent {
     switch (data['event']) {
       case 'MultipartMessage':
         return MultipartMessageRoomEvent(
-          id: data['id'],
-          senderId: data['senderId'],
-          senderName: data['senderName'],
-          parts: data['parts']
-              .map<ChatkitMessagePart>(ChatkitMessagePart.fromData)
-              .toList(),
+          roomId: data['roomId'],
+          message: ChatkitMessage.fromData(data),
         );
       default:
         return UnknownRoomEvent();
@@ -23,16 +19,11 @@ abstract class ChatkitRoomEvent {
 }
 
 class MultipartMessageRoomEvent extends ChatkitRoomEvent {
-  final int id;
-  final String senderId;
-  final String senderName;
-  final List<ChatkitMessagePart> parts;
+  final ChatkitMessage message;
   MultipartMessageRoomEvent({
-    @required this.id,
-    @required this.senderId,
-    this.senderName,
-    @required this.parts,
-  });
+    @required this.message,
+    @required String roomId,
+  }) : super(roomId: roomId);
 }
 
 class UnknownRoomEvent extends ChatkitRoomEvent {}
