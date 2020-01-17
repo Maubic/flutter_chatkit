@@ -17,16 +17,13 @@ import com.pusher.chatkit.AndroidChatkitDependencies
 import com.pusher.chatkit.ChatkitTokenProvider
 import com.pusher.chatkit.CurrentUser
 import com.pusher.chatkit.SynchronousCurrentUser
+import com.pusher.chatkit.rooms.Room
 import com.pusher.chatkit.rooms.RoomEvent
 import com.pusher.chatkit.messages.multipart.Message
 import com.pusher.chatkit.messages.multipart.Payload
 import com.pusher.util.Result as PusherResult
 import elements.Subscription
-
-private const val SUCCESS_RESULT: Int = 0;
-private const val FAILURE_RESULT: Int = 1;
-private const val SUCCESS_EVENT: Int = 0;
-private const val FAILURE_EVENT: Int = 1;
+import java.text.SimpleDateFormat
 
 class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, StreamHandler {
   private var currentUser: CurrentUser? = null;
@@ -108,12 +105,7 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
                 "event" to "CurrentUserReceived",
                 "id" to currentUser.id,
                 "name" to currentUser.name,
-                "rooms" to currentUser.rooms.map { room -> hashMapOf(
-                  "id" to room.id,
-                  "name" to room.name,
-                  "unreadCount" to room.unreadCount,
-                  "customData" to room.customData
-                )}
+                "rooms" to currentUser.rooms.map(::serializeRoom)
               ))
             }
           }
@@ -143,6 +135,8 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
                 "event" to "MultipartMessage",
                 "id" to message.id,
                 "roomId" to roomId,
+                "room" to serializeRoom(message.room),
+                "createdAt" to message.createdAt.getTime(),
                 "senderId" to message.sender.id,
                 "senderName" to message.sender.name,
                 "parts" to message.parts.map { part ->
@@ -182,4 +176,21 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
   override fun onCancel(arguments: Any?) {
     eventSink = null
   }
+}
+
+fun serializeRoom(room: Room) : HashMap<String, Any?> {
+  return hashMapOf(
+    "id" to room.id,
+    "name" to room.name,
+    "unreadCount" to room.unreadCount,
+    "customData" to room.customData,
+    "lastMessageAt" to room.lastMessageAt?.let {
+      try {
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX").parse(it).getTime()
+      } catch (e: Exception) {
+        println("Error parsing date: $e");
+        null
+      }
+    }
+  )
 }
