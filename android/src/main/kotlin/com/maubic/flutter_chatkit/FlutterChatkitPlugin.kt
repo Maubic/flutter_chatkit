@@ -108,6 +108,30 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
                 "rooms" to currentUser.rooms.map(::serializeRoom)
               ))
             }
+            is ChatEvent.RoomUpdated -> {
+              val room: Room = event.room
+              successEvent(hashMapOf(
+                "type" to "global",
+                "event" to "RoomUpdated",
+                "room" to serializeRoom(room)
+              ))
+            }
+            is ChatEvent.AddedToRoom -> {
+              val room: Room = event.room
+              successEvent(hashMapOf(
+                "type" to "global",
+                "event" to "AddedToRoom",
+                "room" to serializeRoom(room)
+              ))
+            }
+            is ChatEvent.RemovedFromRoom -> {
+              val roomId: String = event.roomId
+              successEvent(hashMapOf(
+                "type" to "global",
+                "event" to "RemovedFromRoom",
+                "roomId" to roomId
+              ))
+            }
           }
         },
         callback = { res ->
