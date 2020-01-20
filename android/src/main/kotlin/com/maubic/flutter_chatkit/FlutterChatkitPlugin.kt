@@ -164,6 +164,31 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
     } else if (call.method == "unsubscribeFromRoom") {
       val roomId: String = call.argument<String>("roomId")!!
       roomSubscriptions.get(roomId)?.unsubscribe()
+    } else if (call.method == "sendSimpleMessage") {
+      val roomId: String = call.argument<String>("roomId")!!
+      val messageText: String = call.argument<String>("messageText")!!
+      
+      currentUser?.sendSimpleMessage(
+        roomId = roomId,
+        messageText = messageText,
+        callback = { res ->
+          when (res) {
+            is PusherResult.Success -> {
+              successResult(result, roomId)
+            }
+            is PusherResult.Failure -> {
+              failureResult(result, res.error.message)
+            }
+          }
+        }
+      )
+    }else if(call.method == "setReadCursor"){
+      val roomId: String = call.argument<String>("roomId")!!
+      val messageId: Int = call.argument<Int>("messageId")!!
+      currentUser?.setReadCursor(
+        roomId = roomId,
+        position = messageId
+      )
     } else {
       result.notImplemented()
     }

@@ -52,7 +52,35 @@ class FlutterChatkit {
         'tokenProviderURL': tokenProviderURL,
       });
     } catch (err) {
-      print('Error: ${err}');
+      print('Error: $err');
+    }
+  }
+
+  Future<void> sendSimpleMessage({
+    @required String roomId,
+    @required String messageText,
+  }) async {
+    try {
+      await _methodChannel.invokeMethod('sendSimpleMessage', {
+        'roomId': roomId,
+        'messageText': messageText,
+      });
+    } catch (err) {
+      print('Error: $err');
+    }
+  }
+
+  Future<void> setReadCursor({
+    @required String roomId,
+    @required int messageId,
+  }) async {
+    try {
+      await _methodChannel.invokeMethod('setReadCursor', {
+        'roomId': roomId,
+        'messageId': messageId,
+      });
+    } catch (err) {
+      print('Error: $err');
     }
   }
 
