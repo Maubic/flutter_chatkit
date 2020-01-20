@@ -189,6 +189,7 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
         roomId = roomId,
         position = messageId
       )
+      successResult(result, roomId)
     } else {
       result.notImplemented()
     }
