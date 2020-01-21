@@ -165,13 +165,15 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
         if let myArgs = args as? [String: Any] {
             guard let roomId = myArgs["roomId"] as? String else { return }
             print("[Maubic - PusherChatkitPlugin] unsubscribeFromRoom: Room " + roomId)
-
-            // SNA TODO: Unsubscribe de la sala correcta.
-            //let room = currentUser!.rooms.first!
-            //room.unsubscribe()
+            for room in currentUser!.rooms {
+                if (room.id == roomId) {
+                    room.unsubscribe()
+                    break
+                }
+            }
             // SNA TODO: Guardar lista de salas suscritas.
             //result(room.id)
-            result(true)
+            result(0)
         }
     case "sendSimpleMessage":
         // SNA TODO: Enviar mensaje
