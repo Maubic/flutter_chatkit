@@ -55,7 +55,7 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
     private func toNSDictionary(room: PCRoom) -> NSDictionary {
         let dateFormatter = DateFormatter()
         let lastMessageAt = dateFormatter.date(from: room.lastMessageAt ?? "")?.timeIntervalSince1970 ?? 0.0
-        
+
         let dicRoom : NSDictionary = [
             "id" : room.id,
             "name" : room.name,
@@ -226,6 +226,7 @@ extension SwiftFlutterChatkitPlugin: PCRoomDelegate {
             }
         }
 
+        
         let myMessage: NSDictionary = [
             "type" : "room",
             "event" : "MultipartMessage",
@@ -233,6 +234,8 @@ extension SwiftFlutterChatkitPlugin: PCRoomDelegate {
             "roomId": message.room.id,
             "senderId": message.sender.id,
             "senderName": message.sender.name!,
+            "createdAt" : Int((DateFormatter().date(from: message.createdAt)?.timeIntervalSince1970 ?? 0.0)*1000),
+            "room": toNSDictionary(room: message.room),
             "parts": parts,
         ]
         
