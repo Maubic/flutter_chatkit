@@ -53,13 +53,17 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
     }
     
     private func toNSDictionary(room: PCRoom) -> NSDictionary {
+        let dateFormatter = DateFormatter()
+        let lastMessageAt = dateFormatter.date(from: room.lastMessageAt ?? "")?.timeIntervalSince1970 ?? 0.0
+        
         let dicRoom : NSDictionary = [
             "id" : room.id,
             "name" : room.name,
             "unreadCount" : room.unreadCount!,
-            // SNA TODO: Implement CustomData and lastMessageAt
-            //"customData" : NSMutableDictionary(dictionary: firstRoom.customData ?? [:]) as NSDictionary,
-            //"lastMessageAt" : room.lastMessageAt!
+            // SNA TODO: Implementar customData
+            // "customData" : NSDictionary(dictionary: room.customData),
+            // SNA TODO: Verificar que es en miliseconds
+            "lastMessageAt" : Int(lastMessageAt*1000),
         ]
         return dicRoom
     }
