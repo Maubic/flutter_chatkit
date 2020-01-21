@@ -205,7 +205,7 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
 extension SwiftFlutterChatkitPlugin: PCRoomDelegate {
     public func onMultipartMessage(_ message: PCMultipartMessage) {
 
-        print("[Maubic - PusherChatkitPlugin] Message received! \(Thread.current)")
+        print("[Maubic - PusherChatkitPlugin] Message received!")
         
         var parts : Array<NSDictionary> = []
         for part in message.parts {
@@ -216,7 +216,7 @@ extension SwiftFlutterChatkitPlugin: PCRoomDelegate {
                     "content" : payload.content,
                 ]
                 parts.append(msg)
-                print("[Maubic - PusherChatkitPlugin] Message received! " + payload.content)
+                print("[Maubic - PusherChatkitPlugin] Message payload type 'inline', content: " + payload.content)
             default:
                 print("[Maubic - PusherChatkitPlugin] Message doesn't have the right payload!")
                 let msg: NSDictionary = [
