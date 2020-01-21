@@ -177,21 +177,44 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
         }
     case "sendSimpleMessage":
         // SNA TODO: Enviar mensaje
-        result("TODO")
-    case "setReadCursor":
         guard let args = call.arguments else {
             return
         }
         if let myArgs = args as? [String: Any] {
             guard let roomId = myArgs["roomId"] as? String else { return }
-            guard let messageId = myArgs["messageId"] as? String else { return }
-            //currentUser?.setReadCursor(roomId: roomId, position: messageId, completionHandler: { (error) in
-            //    guard error == nil else {
-            //        print("[Maubic - PusherChatkitPlugin] Error setting cursor: \(error!.localizedDescription)")
-            //        return
-            //    }
-                print("[Maubic - PusherChatkitPlugin] Read cursor successfully updated \(roomId)! 👋")
-            result(roomId)
+            guard let messageText = myArgs["messageText"] as? String else { return }
+            
+            currentUser?.sendSimpleMessage(roomID: roomId, text: messageText) { message, error in
+                guard error == nil else {
+                    print("[Maubic - PusherChatkitPlugin] Error sending message to \(roomId): \(error!.localizedDescription)")
+                    result(FlutterError(code: "ERR_RESULT",
+                                        message: error!.localizedDescription,
+                                        details: nil))
+                    return
+                }
+                result(roomId)
+            }
+        }
+    case "setReadCursor":
+        guard let args = call.arguments else {
+            return
+        }
+    
+        
+        if let myArgs = args as? [String: Any] {
+            guard let roomId = myArgs["roomId"] as? String else { return }
+            guard let messageId = myArgs["messageId"] as? Int else { return }
+            currentUser?.setReadCursor(position: messageId, roomID: roomId){ error in
+                guard error == nil else {
+                    print("[Maubic - PusherChatkitPlugin] Error setting cursor: \(error!.localizedDescription)")
+                    result(FlutterError(code: "ERR_RESULT",
+                                        message: error!.localizedDescription,
+                                        details: nil))
+                    return
+                }
+                print("[Maubic - PusherChatkitPlugin] Read cursor successfully updated for \(roomId)! 👋")
+                result(roomId)
+            }
         } else {
             //esult.notImplemented();
         }
