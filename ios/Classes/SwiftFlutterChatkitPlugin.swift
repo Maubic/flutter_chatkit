@@ -57,7 +57,7 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
             "id" : room.id,
             "name" : room.name,
             "unreadCount" : room.unreadCount!,
-            // SNA TODO: ImplementscCustomData and lastMessageAt
+            // SNA TODO: Implement CustomData and lastMessageAt
             //"customData" : NSMutableDictionary(dictionary: firstRoom.customData ?? [:]) as NSDictionary,
             //"lastMessageAt" : room.lastMessageAt!
         ]
@@ -107,15 +107,7 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
                 
                 var myRooms : Array<NSDictionary> = []
                 for room in currentUser!.rooms {
-                    let dicRoom : NSDictionary = [
-                        "id" : room.id,
-                        "name" : room.name,
-                        "unreadCount" : room.unreadCount!,
-                        // SNA TODO: ImplementscCustomData and lastMessageAt
-                        //"customData" : NSMutableDictionary(dictionary: firstRoom.customData ?? [:]) as NSDictionary,
-                        //"lastMessageAt" : room.lastMessageAt!
-                    ]
-                    myRooms.append(dicRoom)
+                    myRooms.append(self.serializeRoom(room))
                 }
                 
                 print("[Maubic - PusherChatkitPlugin] MyRooms \(myRooms)")
