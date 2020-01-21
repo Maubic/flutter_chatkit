@@ -52,7 +52,7 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
         eventSink!(data)
     }
     
-    private func serializeRoom(room: PCRoom) -> NSDictionary {
+    private func toNSDictionary(room: PCRoom) -> NSDictionary {
         let dicRoom : NSDictionary = [
             "id" : room.id,
             "name" : room.name,
@@ -107,7 +107,7 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
                 
                 var myRooms : Array<NSDictionary> = []
                 for room in currentUser!.rooms {
-                    myRooms.append(self.serializeRoom(room))
+                    myRooms.append(self.toNSDictionary(room: room))
                 }
                 
                 print("[Maubic - PusherChatkitPlugin] MyRooms \(myRooms)")
