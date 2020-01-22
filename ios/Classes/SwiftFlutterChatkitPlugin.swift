@@ -82,13 +82,19 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
         
         if let myArgs = args as? [String: Any] {
             let instanceLocator = myArgs["instanceLocator"] as? String
-            let accessToken = myArgs["accessToken"] as? String?
+            let accessToken = myArgs["accessToken"] as? String
             let tokenProviderURL = myArgs["tokenProviderURL"] as? String
             let userId = myArgs["userId"] as? String
             
             self.chatManager = ChatManager(
                 instanceLocator: instanceLocator!, //Your Chatkit Instance ID
-                tokenProvider: PCTokenProvider(url: tokenProviderURL!),
+                tokenProvider: PCTokenProvider(
+                    url: tokenProviderURL!,
+                    requestInjector: { req in
+                        req.addHeaders(["Authorization" : accessToken!])
+                        return req
+                }
+                ),
                 userID: userId!
             )
             
@@ -192,7 +198,7 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
                                         details: nil))
                     return
                 }
-                result(roomId)
+                result(message)
             }
         }
     case "setReadCursor":
