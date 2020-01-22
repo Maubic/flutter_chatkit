@@ -54,8 +54,11 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
     
     private func toNSDictionary(room: PCRoom) -> NSDictionary {
         let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         let lastMessageAt = dateFormatter.date(from: room.lastMessageAt ?? "")?.timeIntervalSince1970 ?? 0.0
-
+        
+        print("[Maubic - PusherChatkitPlugin] roomLastMessageAt: \(lastMessageAt)")
         let dicRoom : NSDictionary = [
             "id" : room.id,
             "name" : room.name,
@@ -85,16 +88,24 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
             let accessToken = myArgs["accessToken"] as? String
             let tokenProviderURL = myArgs["tokenProviderURL"] as? String
             let userId = myArgs["userId"] as? String
+            var pcTokenProvider = PCTokenProvider(
+                url: tokenProviderURL!
+            )
+            if ((accessToken) != nil) {
+                print("[Maubic - PusherChatkitPlugin] accessToken \(accessToken ?? "")")
+                    pcTokenProvider = PCTokenProvider(
+                        url: tokenProviderURL!,
+                        requestInjector: { req in
+                            req.addHeaders(["Authorization" : accessToken!])
+                            return req
+                        })
+                } else {
+                    print("[Maubic - PusherChatkitPlugin] accessToken null")
+                }
             
             self.chatManager = ChatManager(
                 instanceLocator: instanceLocator!, //Your Chatkit Instance ID
-                tokenProvider: PCTokenProvider(
-                    url: tokenProviderURL!,
-                    requestInjector: { req in
-                        req.addHeaders(["Authorization" : accessToken!])
-                        return req
-                }
-                ),
+                tokenProvider: pcTokenProvider,
                 userID: userId!
             )
             
@@ -257,6 +268,10 @@ extension SwiftFlutterChatkitPlugin: PCRoomDelegate {
             }
         }
 
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        let date = dateFormatter.date(from: message.createdAt)?.timeIntervalSince1970 ?? 0.0
         
         let myMessage: NSDictionary = [
             "type" : "room",
@@ -265,7 +280,7 @@ extension SwiftFlutterChatkitPlugin: PCRoomDelegate {
             "roomId": message.room.id,
             "senderId": message.sender.id,
             "senderName": message.sender.name!,
-            "createdAt" : Int((DateFormatter().date(from: message.createdAt)?.timeIntervalSince1970 ?? 0.0)*1000),
+            "createdAt" : Int(date*1000),
             "room": toNSDictionary(room: message.room),
             "parts": parts,
         ]
