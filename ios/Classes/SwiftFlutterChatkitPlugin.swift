@@ -298,34 +298,151 @@ public class SwiftFlutterChatkitPluginChatManagerDelegate: PCChatManagerDelegate
     init(eventSink: @escaping FlutterEventSink) {
         self.eventSink = eventSink
     }
+
+/* SNA TODO: Refactor this  --v ! */
+    private func toNSDictionary(room: PCRoom) -> NSDictionary {
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        let lastMessageAt = dateFormatter.date(from: room.lastMessageAt ?? "")?.timeIntervalSince1970 ?? 0.0
+        
+        print("[Maubic - PusherChatkitPlugin] roomLastMessageAt: \(lastMessageAt)")
+        let dicRoom : NSDictionary = [
+            "id" : room.id,
+            "name" : room.name,
+            "unreadCount" : room.unreadCount!,
+            // SNA TODO: Implementar customData
+            // "customData" : NSDictionary(dictionary: room.customData),
+            // SNA TODO: Verificar que es en miliseconds
+            "lastMessageAt" : Int(lastMessageAt*1000),
+        ]
+        return dicRoom
+    }
+    
+    private func sendDataToFlutter(data: NSDictionary) {
+        if (eventSink == nil) {
+            print("[Maubic - PusherChatkitPlugin] EventSink does not exists")
+            return
+        }
+        eventSink!(data)
+    }
+    
+    private func sendDataToFlutter(data: String) {
+        if (eventSink == nil) {
+            print("[Maubic - PusherChatkitPlugin] EventSink does not exists")
+            return
+        }
+        eventSink!(data)
+    }
+/* SNA TODO: Refactor this --^ ! */
     
     public func onAddedToRoom(_ room: PCRoom) {
         print("[Maubic - PusherChatkitPlugin] Added to room: \(room.name)")
+        
+        
+        let myResult: NSDictionary = [
+            "type" : "global",
+            "event" : "AddedToRoom",
+            "room" : self.toNSDictionary(room: room)
+        ]
+        
+        DispatchQueue.main.async {
+            self.sendDataToFlutter(data: myResult)
+        }
+        
     }
     
     public func onRemovedFromRoom(_ room: PCRoom) {
         print("[Maubic - PusherChatkitPlugin] Removed from room: \(room.name)")
+
+        let myResult: NSDictionary = [
+            "type" : "global",
+            "event" : "RemovedFromRoom",
+            "room" : self.toNSDictionary(room: room)
+        ]
+        
+        DispatchQueue.main.async {
+            self.sendDataToFlutter(data: myResult)
+        }
+
     }
     
     public func onRoomUpdated(room: PCRoom) {
         print("[Maubic - PusherChatkitPlugin] Room updated: \(room)")
-
+        
+        let myResult: NSDictionary = [
+            "type" : "global",
+            "event" : "RoomUpdated",
+            "room" : self.toNSDictionary(room: room)
+        ]
+        
+        DispatchQueue.main.async {
+            self.sendDataToFlutter(data: myResult)
+        }
     }
     
     public func onRoomDeleted(room: PCRoom) {
         print("[Maubic - PusherChatkitPlugin] Room deleted: \(room.name)")
+        
+        let myResult: NSDictionary = [
+            "type" : "global",
+            "event" : "RoomDeleted",
+            "room" : self.toNSDictionary(room: room)
+        ]
+        
+        DispatchQueue.main.async {
+            self.sendDataToFlutter(data: myResult)
+        }
+        
     }
     
     public func onUserJoinedRoom(_ room: PCRoom, user: PCUser) {
         print("[Maubic - PusherChatkitPlugin] User \(user.displayName) joined room: \(room.name)")
+        
+        let myResult: NSDictionary = [
+            "type" : "global",
+            "event" : "UserJoinedRoom",
+            "room" : self.toNSDictionary(room: room),
+            "user" : user.id
+        ]
+        
+        DispatchQueue.main.async {
+            self.sendDataToFlutter(data: myResult)
+        }
+        
     }
     
     public func onUserLeftRoom(_ room: PCRoom, user: PCUser) {
         print("[Maubic - PusherChatkitPlugin] User \(user.displayName) left room: \(room.name)")
+        
+        let myResult: NSDictionary = [
+            "type" : "global",
+            "event" : "UserLeftRoom",
+            "room" : self.toNSDictionary(room: room),
+            "user" : user.id
+        ]
+        
+        DispatchQueue.main.async {
+            self.sendDataToFlutter(data: myResult)
+        }
+        
     }
     
     public func onPresenceChanged(stateChange: PCPresenceStateChange, user: PCUser) {
         print("[Maubic - PusherChatkitPlugin] \(user.displayName)'s presence state went from \(stateChange.previous.rawValue) to \(stateChange.current.rawValue)")
+        
+        let myResult: NSDictionary = [
+            "type" : "global",
+            "event" : "PresenceChanged",
+            "user" : user.id,
+            "currentState" : stateChange.current.rawValue,
+            "previousState" : stateChange.previous.rawValue
+        ]
+        
+        DispatchQueue.main.async {
+            self.sendDataToFlutter(data: myResult)
+        }
+        
     }
     
     public func onUserStartedTyping(inRoom room: PCRoom, user: PCUser) {
