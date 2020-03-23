@@ -212,6 +212,42 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
                 result(message)
             }
         }
+    case "sendAttachmentMessage":
+        guard let args = call.arguments else {
+            return
+        }
+        if let myArgs = args as? [String: Any] {
+            guard let roomId = myArgs["roomId"] as? String else { return }
+            guard let filename = myArgs["filename"] as? String else { return }
+            guard let type = myArgs["type"] as? String else { return }
+            
+        // TODO.
+        let jsonString = "{\"hi\": \"there\"}"
+        let jsonData = jsonString.data(using: .utf8)
+
+        let parts = [PCPartRequest(
+        .attachment(
+            PCPartAttachmentRequest(
+            type: type,
+            file: jsonData!,
+            name: filename,
+            customData: ["key": "value"]
+            )
+        )
+        )]
+
+
+            currentUser?.sendMultipartMessage(roomID: roomId, parts: parts) { message, error in
+                guard error == nil else {
+                    print("[Maubic - PusherChatkitPlugin] Error sending multipart message to \(roomId): \(error!.localizedDescription)")
+                    result(FlutterError(code: "ERR_RESULT",
+                                        message: error!.localizedDescription,
+                                        details: nil))
+                    return
+                }
+                result(message)
+            }
+        }
     case "setReadCursor":
         guard let args = call.arguments else {
             return
@@ -259,6 +295,16 @@ extension SwiftFlutterChatkitPlugin: PCRoomDelegate {
                 ]
                 parts.append(msg)
                 print("[Maubic - PusherChatkitPlugin] Message payload type 'inline', content: " + payload.content)
+            case .attachment(let payload): 
+                payload.url() { downloadUrl, error in
+                    let msg: NSDictionary = [
+                        "type" : "attachment" as String,
+                        "size" : payload.size,
+                        "url"  : downloadUrl,
+                    ]
+                    parts.append(msg)
+                    print("[Maubic - PusherChatkitPlugin] Message payload type 'attachment'")
+                }
             default:
                 print("[Maubic - PusherChatkitPlugin] Message doesn't have the right payload!")
                 let msg: NSDictionary = [
