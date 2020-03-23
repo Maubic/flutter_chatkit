@@ -70,6 +70,22 @@ class FlutterChatkit {
     }
   }
 
+  Future<void> sendAttachmentMessage({
+    @required String roomId,
+    @required String filename,
+    @required String type,
+  }) async {
+    try {
+      await _methodChannel.invokeMethod('sendAttachmentMessage', {
+        'roomId': roomId,
+        'filename': filename,
+        'type': type,
+      });
+    } catch (err) {
+      print('Error: $err');
+    }
+  }
+
   Future<void> setReadCursor({
     @required String roomId,
     @required int messageId,

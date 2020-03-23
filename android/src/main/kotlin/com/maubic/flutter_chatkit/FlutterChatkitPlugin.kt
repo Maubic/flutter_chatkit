@@ -21,9 +21,13 @@ import com.pusher.chatkit.rooms.Room
 import com.pusher.chatkit.rooms.RoomEvent
 import com.pusher.chatkit.messages.multipart.Message
 import com.pusher.chatkit.messages.multipart.Payload
+import com.pusher.chatkit.messages.multipart.NewPart
 import com.pusher.util.Result as PusherResult
+import com.pusher.util.collect
 import elements.Subscription
+import elements.Error
 import java.text.SimpleDateFormat
+import java.io.File
 
 class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, StreamHandler {
   private var currentUser: CurrentUser? = null;
@@ -154,29 +158,40 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
           when (event) {
             is RoomEvent.MultipartMessage -> {
               val message: Message = event.message
-              successEvent(hashMapOf(
-                "type" to "room",
-                "event" to "MultipartMessage",
-                "id" to message.id,
-                "roomId" to roomId,
-                "room" to serializeRoom(message.room),
-                "createdAt" to message.createdAt.getTime(),
-                "senderId" to message.sender.id,
-                "senderName" to message.sender.name,
-                "parts" to message.parts.map { part ->
-                  val payload: Payload = part.payload
-                  when (payload) {
-                    is Payload.Inline -> hashMapOf(
-                      "type" to "inline",
-                      "content" to payload.content
-                    )
-                    // TODO
-                    else -> hashMapOf(
-                      "type" to "other"
-                    )
-                  }
+              
+              val partsResults: List<PusherResult<HashMap<String, Any>, Error>> = message.parts.map { part ->
+                val payload: Payload = part.payload
+                val res: PusherResult<HashMap<String, Any>, Error> = when (payload) {
+                  is Payload.Inline -> PusherResult.success<HashMap<String, Any>, Error>(hashMapOf(
+                    "type" to "inline",
+                    "content" to payload.content
+                  ))
+                  is Payload.Attachment -> payload.url().map { url -> hashMapOf(
+                    "type" to "attachment",
+                    "size" to payload.size,
+                    "url" to url
+                  )}
+                  // TODO
+                  else -> PusherResult.success<HashMap<String, Any>, Error>(hashMapOf(
+                    "type" to "other"
+                  ))
                 }
-              ))
+                res
+              }
+
+              partsResults.collect<HashMap<String, Any>, Error>().map { parts ->
+                successEvent(hashMapOf(
+                  "type" to "room",
+                  "event" to "MultipartMessage",
+                  "id" to message.id,
+                  "roomId" to roomId,
+                  "room" to serializeRoom(message.room),
+                  "createdAt" to message.createdAt.getTime(),
+                  "senderId" to message.sender.id,
+                  "senderName" to message.sender.name,
+                  "parts" to parts
+                ))
+              }
             }
           }
         },
@@ -206,7 +221,31 @@ class FlutterChatkitPlugin (private val looper: Looper?) : MethodCallHandler, St
           }
         }
       )
-    }else if(call.method == "setReadCursor"){
+    } else if (call.method == "sendAttachmentMessage") {
+      val roomId: String = call.argument<String>("roomId")!!
+      val filename: String = call.argument<String>("filename")!!
+      val type: String = call.argument<String>("type")!!
+      
+      val parts : List<NewPart> = listOf(NewPart.Attachment(
+        type = type,
+        file = File(filename).inputStream()
+      ))
+
+      currentUser?.sendMultipartMessage(
+        roomId = roomId,
+        parts = parts,
+        callback = { res ->
+          when (res) {
+            is PusherResult.Success -> {
+              successResult(result, roomId)
+            }
+            is PusherResult.Failure -> {
+              failureResult(result, res.error.message)
+            }
+          }
+        }
+      )
+    } else if (call.method == "setReadCursor") {
       val roomId: String = call.argument<String>("roomId")!!
       val messageId: Int = call.argument<Int>("messageId")!!
       currentUser?.setReadCursor(

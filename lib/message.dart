@@ -42,6 +42,8 @@ abstract class ChatkitMessagePart {
     switch (data['type']) {
       case 'inline':
         return InlineMessagePart(content: data['content']);
+      case 'attachment':
+        return AttachmentMessagePart(url: data['url'], size: data['size']);
       default:
         return UnknownMessagePart();
     }
@@ -51,6 +53,12 @@ abstract class ChatkitMessagePart {
 class InlineMessagePart extends ChatkitMessagePart {
   final String content;
   InlineMessagePart({this.content});
+}
+
+class AttachmentMessagePart extends ChatkitMessagePart {
+  final String url;
+  final int size;
+  AttachmentMessagePart({this.url, this.size});
 }
 
 class UnknownMessagePart extends ChatkitMessagePart {}
