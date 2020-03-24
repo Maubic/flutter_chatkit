@@ -220,22 +220,26 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
             guard let roomId = myArgs["roomId"] as? String else { return }
             guard let filename = myArgs["filename"] as? String else { return }
             guard let type = myArgs["type"] as? String else { return }
-            
-        // TODO.
-        let jsonString = "{\"hi\": \"there\"}"
-        let jsonData = jsonString.data(using: .utf8)
 
-        let parts = [PCPartRequest(
-        .attachment(
-            PCPartAttachmentRequest(
-            type: type,
-            file: jsonData!,
-            name: filename,
-            customData: ["key": "value"]
+        let file: NSFileHandle? = NSFileHandle(forReadingAtPath: filename)
+
+        if file != nil {
+            // Read all the data
+            let data = file?.readDataToEndOfFile()
+
+            // Close the file
+            file?.closeFile()   
+
+            let parts = [PCPartRequest(
+            .attachment(
+                PCPartAttachmentRequest(
+                type: type,
+                file: data!,
+                name: filename,
+                //customData: ["key": "value"]
+                )
             )
-        )
-        )]
-
+            )]
 
             currentUser?.sendMultipartMessage(roomID: roomId, parts: parts) { message, error in
                 guard error == nil else {
@@ -247,6 +251,9 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
                 }
                 result(message)
             }
+        }         
+ 
+
         }
     case "setReadCursor":
         guard let args = call.arguments else {
