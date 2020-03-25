@@ -221,16 +221,14 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
             guard let filename = myArgs["filename"] as? String else { return }
             guard let type = myArgs["type"] as? String else { return }
 
-            guard let file = FileHandle(forReadingAtPath: filename) else {
-                return;
-            }
+            guard let file = FileHandle(forReadingAtPath: filename) else { return; }
 
         if file != nil {
             // Read all the data
             let data = file.readDataToEndOfFile()
 
             // Close the file
-            file?.closeFile()   
+            file.closeFile()   
 
             let parts = [PCPartRequest(
             .attachment(
