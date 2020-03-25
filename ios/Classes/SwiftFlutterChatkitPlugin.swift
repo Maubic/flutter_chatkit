@@ -234,7 +234,7 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
             .attachment(
                 PCPartAttachmentRequest(
                 type: type,
-                file: data!,
+                file: data,
                 name: filename,
                 customData: ["key": "value"]
                 )
