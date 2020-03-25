@@ -221,11 +221,13 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
             guard let filename = myArgs["filename"] as? String else { return }
             guard let type = myArgs["type"] as? String else { return }
 
-        let file: NSFileHandle? = NSFileHandle(forReadingAtPath: filename)
+            guard let file = FileHandle(forReadingAtPath: filename) else {
+                return;
+            }
 
         if file != nil {
             // Read all the data
-            let data = file?.readDataToEndOfFile()
+            let data = file.readDataToEndOfFile()
 
             // Close the file
             file?.closeFile()   
@@ -236,7 +238,7 @@ public class SwiftFlutterChatkitPlugin: NSObject, FlutterPlugin, FlutterStreamHa
                 type: type,
                 file: data!,
                 name: filename,
-                //customData: ["key": "value"]
+                customData: ["key": "value"]
                 )
             )
             )]
